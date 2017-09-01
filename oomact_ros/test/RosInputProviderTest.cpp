@@ -8,6 +8,7 @@
 #include <aslam/calibration/calibrator/CalibratorI.hpp>
 #include <aslam/calibration/model/FrameGraphModel.h>
 #include <aslam/calibration/model/PoseTrajectory.h>
+#include <aslam/calibration/model/sensors/Imu.h>
 #include <aslam/calibration/model/sensors/PoseSensor.hpp>
 #include <aslam/calibration/tools/SmartPointerTools.h>
 
@@ -18,7 +19,7 @@ using namespace aslam::calibration;
 using namespace aslam::calibration::ros;
 
 
-TEST(RosInputProviderSuite, testEasy) {
+TEST(RosInputProviderSuite, testPoseSensors) {
   // Create configuration // TODO D support compiler validation for configuration a bit
   auto vs = ValueStoreRef::fromString(
       "model{"
@@ -57,4 +58,30 @@ TEST(RosInputProviderSuite, testEasy) {
   c->calibrate();
 
   EXPECT_NEAR(0.0, psA.getTranslationToParent()[1], 0.0001); // it should be zero now because it is receiving the same data as b, which has zero transformation and doesn't get calibrated.
+}
+
+TEST(RosInputProviderSuite, testImuToPoseSensor) {
+  auto vs = ValueStoreRef::fromFile("imu-pose.info");
+
+  // Construct objects
+  FrameGraphModel m(vs.getChild("model"));
+  PoseSensor psA(m, "pose");
+  Imu imu(m, "imu");
+  PoseTrajectory traj(m, "traj");
+
+  // init model with all sensors :
+  m.addModulesAndInit(psA, imu, traj);
+
+  // Create local pseudo shared pointer to model and create a batchCalibrator for it
+  auto spModel = to_local_shared_ptr(m);
+  auto c = createBatchCalibrator(vs.getChild("calibrator"), spModel);
+
+  const std::string testBagPath = "imu-pose.bag";
+  RosInputProvider(spModel).feedBag(testBagPath, *c); // Feed the test.bag
+
+  EXPECT_NEAR(0.0, imu.getTranslationToParent()[1], 0.0001); // check the y position of the sensor a BEFORE calibration
+
+  c->calibrate();
+
+//  EXPECT_NEAR(0.0, psA.getTranslationToParent()[1], 0.0001); // it should be zero now because it is receiving the same data as b, which has zero transformation and doesn't get calibrated.
 }

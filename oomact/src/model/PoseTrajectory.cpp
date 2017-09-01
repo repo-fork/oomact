@@ -129,6 +129,14 @@ bool initSplines(CalibratorI & calib, So3R3Trajectory & trajectory, const PoseSe
 
   trajectory.fitSplines(effectiveBatchInterval, numMeasurements, timestamps, transPoses, rotPoses);
 
+  ErrorTermStatistics statRot(trajectory.getCarrier().getName() + "_rot[deg]"), statTrans(trajectory.getCarrier().getName() + "_trans[1]");
+  for(size_t i = 0; i < timestamps.size(); i++){
+//    statTrans.add(pow((getTranslationSpline().getEvaluatorAt<0>(timestamps[i]).eval() - transPoses[i]).norm(), 2));
+//    statRot.add(sm::kinematics::rad2deg(pow(sm::kinematics::quat2AxisAngle(sm::kinematics::qplus(getRotationSpline().getEvaluatorAt<0>(timestamps[i]).eval(), sm::kinematics::quatInv(rotPoses[i]))).norm(), 2)));
+  }
+  statTrans.printInto(LOG(INFO));
+  statRot.printInto(LOG(INFO));
+
   const auto startTimestamp = trajectory.getRotationSpline().getMinTime();
   const auto endTimestamp = trajectory.getRotationSpline().getMaxTime();
   static_cast<void>(startTimestamp); // prevent unused warning

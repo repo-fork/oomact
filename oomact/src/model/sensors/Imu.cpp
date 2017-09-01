@@ -87,21 +87,21 @@ Bias::Bias(Module & m, const std::string & name, sm::value_store::ValueStoreRef 
     NamedMinimal(name)
 {
   biasVector = m.createCVIfUsed<EuclideanPointCv>(config.getChild("biasVector"), name);
-  if(biasVector){
+  if (biasVector) {
     biasVectorExpression = biasVector->toExpression();
-  } else {
+  } else if (m.isUsed()) {
     biasSplineCarrier.reset(new TrajectoryCarrier(config.getChild("biasSpline")));
   }
 }
 
 void Bias::registerCalibrationVariables(Model& model) {
-  if(biasVector){
+  if (biasVector) {
     model.addCalibrationVariables({biasVector});
   }
 }
 
 void Bias::initState(CalibratorI & calib){
-  if(isUsingSpline()){
+  if (isUsingSpline()) {
     state_ = std::make_shared<BiasBatchState>(*biasSplineCarrier, getName());
     const auto & interval = calib.getCurrentEffectiveBatchInterval();
     const double elapsedTime = interval.getElapsedTime();
@@ -156,7 +156,20 @@ void BiasBatchState::writeToFile(const CalibratorI & calib, const std::string& p
 
 void Imu::addAccelerometerMeasurement(CalibratorI & calib, const AccelerometerMeasurement& data, Timestamp timestamp) const {
   calib.addMeasurementTimestamp(timestamp, *this);
-  measurements_->accelerometer.push_back(std::make_pair(timestamp, data));
+  measurements_->accelerometer.emplace_back(timestamp, data);
+}
+
+void Imu::addGyroscopeMeasurement(CalibratorI & calib, const GyroscopeMeasurement& data, Timestamp timestamp) const {
+  calib.addMeasurementTimestamp(timestamp, *this);
+  measurements_->gyroscope.emplace_back(timestamp, data);
+}
+
+void Imu::addInputTo(Timestamp t, const AccelerometerMeasurement& input, ModuleStorage&) const {
+  measurements_->accelerometer.emplace_back(t, input);
+}
+
+void Imu::addInputTo(Timestamp t, const GyroscopeMeasurement& input, ModuleStorage&) const {
+  measurements_->gyroscope.emplace_back(t, input);
 }
 
 void Imu::clearMeasurements() {
@@ -164,10 +177,6 @@ void Imu::clearMeasurements() {
   measurements_->gyroscope.clear();
 }
 
-void Imu::addGyroscopeMeasurement(CalibratorI & calib, const GyroscopeMeasurement& data, Timestamp timestamp) const {
-  calib.addMeasurementTimestamp(timestamp, *this);
-  measurements_->gyroscope.push_back(std::make_pair(timestamp, data));
-}
 
 using namespace aslam::backend;
 
@@ -228,7 +237,7 @@ void addImuErrorTerms(CalibratorI & calib, const Imu & imu, std::string name, co
       e->setMEstimatorPolicy(imu.getMEstimator());
     }
 
-    VLOG(1) << "Cost function " << name << " : " << e->evaluateError() << " count: " << statWPAP.getCounter() << " timestamp: " << calib.secsSinceStart(timestamp) << "s,";
+    VLOG(2) << "Cost function " << name << " : " << e->evaluateError() << " count: " << statWPAP.getCounter() << " timestamp: " << calib.secsSinceStart(timestamp) << "s,";
     statWPAP.add(timestamp, e);
   }
   statWPAP.printInto(LOG(INFO)) << " Between " << calib.secsSinceStart(minTime) << "s and " << calib.secsSinceStart(maxTime) << "s.";
@@ -253,10 +262,10 @@ void Imu::addMeasurementErrorTerms(CalibratorI & calib, const EstConf & /*ec*/, 
     addImuErrorTerms(
         calib, *this, accelerometerName, measurements_->accelerometer,
         [&, this](const Timestamp timestamp, const AccelerometerMeasurement & m){
-          auto robot = calib.getModelAt(*this, timestamp, 2, {false});
+          auto modelAt = calib.getModelAt(*this, timestamp, 2, {false});
           return boost::make_shared<ErrorTermAccelerometer>(
-              robot.getAcceleration(inertiaFrame, getParentFrame()),
-              getTransformationExpressionTo(robot, inertiaFrame).toRotationExpression().inverse(),
+              modelAt.getAcceleration(getFrame(), inertiaFrame),
+              getTransformationExpressionTo(modelAt, inertiaFrame).toRotationExpression().inverse(),
               g_m,
               accBias.getBiasExpression(timestamp),
               m.a,
@@ -277,9 +286,9 @@ void Imu::addMeasurementErrorTerms(CalibratorI & calib, const EstConf & /*ec*/, 
     addImuErrorTerms(
         calib, *this, gyroscopeName, measurements_->gyroscope,
         [&, this](const Timestamp timestamp, const GyroscopeMeasurement & m){
-          auto robot = calib.getModelAt(*this,  timestamp, 1, {false});
+          auto modelAt = calib.getModelAt(*this,  timestamp, 1, {false});
           return boost::make_shared<ErrorTermGyroscope>(
-              getTransformationExpressionTo(robot, inertiaFrame).toRotationExpression().inverse() * robot.getAngularVelocity(inertiaFrame, getParentFrame()),
+              getTransformationExpressionTo(modelAt, inertiaFrame).toRotationExpression().inverse() * modelAt.getAngularVelocity(getParentFrame(), inertiaFrame),
               gyroBias.getBiasExpression(timestamp),
               m.w,
               isCovarianceAvailable(m) ? m.cov : covarianceMatrix,
