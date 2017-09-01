@@ -97,6 +97,7 @@ catkin_add_gtest(${PROJECT_NAME}_test
   test/data/StorageTest.cpp
   test/acceptance/SimpleModelTest.cpp
   test/acceptance/SimpleCalibratorTest.cpp
+  test/acceptance/ImuCalibrationTest.cpp
   test/model/ModelTest.cpp
   
   WORKING_DIRECTORY  ${PROJECT_SOURCE_DIR}/test

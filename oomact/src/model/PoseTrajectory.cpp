@@ -33,10 +33,11 @@ namespace calibration {
 
 Eigen::Vector4d negateQuatIfThatBringsItCloser(const Eigen::Vector4d& pquat, const
     Eigen::Vector4d& cquat) {
-  if ((pquat + cquat).norm() < (pquat - cquat).norm())
+  if ((pquat + cquat).norm() < (pquat - cquat).norm()) {
     return -cquat;
-  else
+  } else {
     return cquat;
+  }
 }
 
 class BaseTrajectoryBatchState : public BatchState, public So3R3Trajectory {
@@ -109,10 +110,10 @@ bool initSplines(CalibratorI & calib, So3R3Trajectory & trajectory, const PoseSe
   std::vector<Eigen::Vector4d> rotPoses;
   rotPoses.reserve(numMeasurements);
 
-  auto & trajectoryFrame = trajectory.getCarrier().getFrame();
-  auto T_sens_traj = poseSensor.getSensor().getTransformationTo(calib, trajectoryFrame).inverse();
+  const auto & trajectoryFrame = trajectory.getCarrier().getFrame();
+  const auto T_sens_traj = poseSensor.getSensor().getTransformationTo(calib, trajectoryFrame).inverse();
 
-  Timestamp currentDelay = poseSensor.getSensor().hasDelay() ? poseSensor.getSensor().getDelay() : Timestamp::Zero();
+  const Timestamp currentDelay = poseSensor.getSensor().getDelay();
 
   for (auto it = measurements.cbegin(); it != measurements.cend(); ++it) {
     Timestamp timestamp = it->first - currentDelay;
@@ -127,6 +128,14 @@ bool initSplines(CalibratorI & calib, So3R3Trajectory & trajectory, const PoseSe
   }
 
   trajectory.fitSplines(effectiveBatchInterval, numMeasurements, timestamps, transPoses, rotPoses);
+
+  ErrorTermStatistics statRot(trajectory.getCarrier().getName() + "_rot[deg]"), statTrans(trajectory.getCarrier().getName() + "_trans[1]");
+  for(size_t i = 0; i < timestamps.size(); i++){
+//    statTrans.add(pow((getTranslationSpline().getEvaluatorAt<0>(timestamps[i]).eval() - transPoses[i]).norm(), 2));
+//    statRot.add(sm::kinematics::rad2deg(pow(sm::kinematics::quat2AxisAngle(sm::kinematics::qplus(getRotationSpline().getEvaluatorAt<0>(timestamps[i]).eval(), sm::kinematics::quatInv(rotPoses[i]))).norm(), 2)));
+  }
+  statTrans.printInto(LOG(INFO));
+  statRot.printInto(LOG(INFO));
 
   const auto startTimestamp = trajectory.getRotationSpline().getMinTime();
   const auto endTimestamp = trajectory.getRotationSpline().getMaxTime();

@@ -2,6 +2,7 @@
 #define H657A8A48_567D_4372_A5E6_CA05BA2932B4
 
 #include <aslam/calibration/data/MeasurementsContainer.h>
+#include <aslam/calibration/input/InputReceiverI.h>
 #include <aslam/calibration/model/Module.h>
 #include <aslam/calibration/model/StateCarrier.h>
 #include <aslam/calibration/model/Sensor.hpp>
@@ -45,7 +46,7 @@ class Bias : public StateCarrier, public NamedMinimal {
 };
 
 
-class Imu : public Sensor, public StateCarrier {
+class Imu : public Sensor, public StateCarrier, public InputReceiverIT<AccelerometerMeasurement>, public InputReceiverIT<GyroscopeMeasurement> {
  public:
   struct Measurements {
     MeasurementsContainer<AccelerometerMeasurement> accelerometer;
@@ -69,11 +70,16 @@ class Imu : public Sensor, public StateCarrier {
   bool initState(CalibratorI & calib) override;
   void addToBatch(const Activator & stateActivator, BatchStateReceiver & batchStateReceiver, DesignVariableReceiver & problem) override;
 
-  Imu(Model & model, const std::string & name, sm::value_store::ValueStoreRef config);
+  Imu(Model & model, const std::string & name, sm::value_store::ValueStoreRef config = sm::value_store::ValueStoreRef());
 
   void clearMeasurements() override;
   void addAccelerometerMeasurement(CalibratorI & calib, const AccelerometerMeasurement& data, Timestamp timestamp) const;
+
   void addGyroscopeMeasurement(CalibratorI & calib, const GyroscopeMeasurement& data, Timestamp timestamp) const;
+
+  void addInputTo(Timestamp t, const AccelerometerMeasurement & input, ModuleStorage & s) const override;
+  void addInputTo(Timestamp t, const GyroscopeMeasurement & input, ModuleStorage & s) const override;
+
   bool hasTooFewMeasurements() const override;
 
   void addPriorFactors(CalibratorI & calib, backend::ErrorTermReceiver & errorTermReceiver, double priorFactor) const;
