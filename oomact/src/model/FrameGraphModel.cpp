@@ -132,7 +132,6 @@ class FrameGraphModelAtTimeImpl: public ModelAtTimeImpl {
 
   aslam::backend::EuclideanExpression getAcceleration(const Frame & of, const Frame & frame) const override {
       const aslam::backend::EuclideanExpression aG = getCoordinateFrame(of, frame).getAG();
-      LOG(INFO) << "aG=" << std::endl << aG.evaluate() << std::endl; // XXX: debug output of aG
       return aG;
   }
 
