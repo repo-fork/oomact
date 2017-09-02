@@ -86,11 +86,17 @@ class BiasBatchState : public BatchState {
 Bias::Bias(Module & m, const std::string & name, sm::value_store::ValueStoreRef config) :
     NamedMinimal(name)
 {
-  biasVector = m.createCVIfUsed<EuclideanPointCv>(config.getChild("biasVector"), name);
-  if (biasVector) {
-    biasVectorExpression = biasVector->toExpression();
-  } else if (m.isUsed()) {
-    biasSplineCarrier.reset(new TrajectoryCarrier(config.getChild("biasSpline")));
+  if (config.getBool("hasBias", true)) {
+    biasVector = m.createCVIfUsed<EuclideanPointCv>(config.getChild("biasVector"), name);
+    if (biasVector) {
+      mode_ = Mode::Vector;
+      biasVectorExpression = biasVector->toExpression();
+    } else if (m.isUsed()) {
+      mode_ = Mode::Spline;
+      biasSplineCarrier.reset(new TrajectoryCarrier(config.getChild("biasSpline")));
+    }
+  } else {
+    mode_ = Mode::None;
   }
 }
 

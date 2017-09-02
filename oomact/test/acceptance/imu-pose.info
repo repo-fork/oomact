@@ -29,6 +29,7 @@ model {
 		topic "/firefly/vi_sensor/imu"
 
 		acc {
+			hasBias false
 			biasVector {
 				x 0
 				y 0
@@ -42,6 +43,7 @@ model {
 			}
 		}
 		gyro {
+			hasBias false
 			biasVector {
 				x 0
 				y 0
@@ -80,7 +82,7 @@ model {
 		initWithPoseMeasurements true
 		McSensor pose
 		splines {
-			knotsPerSecond 40
+			knotsPerSecond 20
 			rotSplineOrder 4
 			rotFittingLambda 0.0000001
 			transSplineOrder 4
