@@ -76,8 +76,8 @@ class FrameGraphModelAtTimeImpl: public ModelAtTimeImpl {
   template <int maximalDerivativeOrder>
   CoordinateFrame getCoordinateFrame(const Frame & to, const Frame & from, const size_t originalMaximalDerivativeOrder) const {
     boost::shared_ptr<CoordinateFrame> f, fInv;
-    fgModel_.frameGraph_->walkPath(&to , &from, [&](const FrameLink & frameLink, bool inverse){
-      CHECK(!inverse) << "to=" << to << ", from=" << from;
+    fgModel_.frameGraph_->walkPath(&from , &to, [&](const FrameLink & frameLink, bool inverse){
+      CHECK(inverse) << "to=" << to << ", from=" << from;
       switch(frameLink.type){
         case FrameLink::Type::PoseCv:
           {
@@ -132,7 +132,6 @@ class FrameGraphModelAtTimeImpl: public ModelAtTimeImpl {
 
   aslam::backend::EuclideanExpression getAcceleration(const Frame & of, const Frame & frame) const override {
       const aslam::backend::EuclideanExpression aG = getCoordinateFrame(of, frame).getAG();
-      LOG(INFO) << "aG=" << std::endl << aG.evaluate() << std::endl; // XXX: debug output of aG
       return aG;
   }
 

@@ -24,7 +24,7 @@ class Bias : public StateCarrier, public NamedMinimal {
  public:
   Bias(Module & m, const std::string & name, sm::value_store::ValueStoreRef config);
 
-  bool isUsingSpline() const { return !biasVector; }
+  bool isUsingSpline() const { return mode_ == Mode::Spline; }
 
   aslam::backend::EuclideanExpression getBiasExpression(Timestamp t) const;
 
@@ -34,6 +34,10 @@ class Bias : public StateCarrier, public NamedMinimal {
     }
   }
 
+  enum class Mode {
+    None, Vector, Spline
+  };
+
   void initState(CalibratorI & calib);
   void addToBatch(bool stateActive, BatchStateReceiver & batchStateReceiver, DesignVariableReceiver & problem);
   void registerCalibrationVariables(Model & model);
@@ -42,6 +46,7 @@ class Bias : public StateCarrier, public NamedMinimal {
   aslam::backend::EuclideanExpression biasVectorExpression;
   std::shared_ptr<TrajectoryCarrier> biasSplineCarrier;
   std::shared_ptr<BiasBatchState> state_;
+  Mode mode_ = Mode::None;
   friend Imu;
 };
 
