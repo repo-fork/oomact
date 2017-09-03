@@ -32,6 +32,8 @@ Imu::Imu(Model& model, const std::string& name, sm::value_store::ValueStoreRef c
     measurements_(std::make_shared<Measurements>()),
     useAcc_(getMyConfig().getBool("acc/used", true)),
     useGyro_(getMyConfig().getBool("gyro/used", true)),
+    enforceAccCovariance_(getMyConfig().getBool("acc/enforceCovariance", false)),
+    enforceGyroCovariance_(getMyConfig().getBool("gyro/enforceCovariance", false)),
     accBias(*this, "accBias", getMyConfig().getChild("acc")),
     gyroBias(*this, "gyroBias", getMyConfig().getChild("gyro")),
     minimalMeasurementsPerBatch(getMyConfig().getInt("minimalMeasurementsPerBatch", 100)),
@@ -61,17 +63,27 @@ Imu::Imu(Model& model, const std::string& name, sm::value_store::ValueStoreRef c
 void Imu::writeConfig(std::ostream& out) const {
   MODULE_WRITE_PARAMETER(inertiaFrame);
 
+  //TODO D write bias mode
+
   MODULE_WRITE_FLAG(useAcc_);
   if(useAcc_){
     MODULE_WRITE_PARAMETER(accXVariance);
     MODULE_WRITE_PARAMETER(accYVariance);
     MODULE_WRITE_PARAMETER(accZVariance);
+    MODULE_WRITE_FLAG(enforceAccCovariance_);
+    if(accBias.isUsingSpline()){
+      MODULE_WRITE_PARAMETER(accRandomWalk);
+    }
   }
   MODULE_WRITE_FLAG(useGyro_);
   if(useGyro_){
     MODULE_WRITE_PARAMETER(gyroXVariance);
     MODULE_WRITE_PARAMETER(gyroYVariance);
     MODULE_WRITE_PARAMETER(gyroZVariance);
+    MODULE_WRITE_FLAG(enforceGyroCovariance_);
+    if(accBias.isUsingSpline()){
+      MODULE_WRITE_PARAMETER(gyroRandomWalk);
+    }
   }
 
   MODULE_WRITE_PARAMETER(minimalMeasurementsPerBatch);
@@ -295,7 +307,7 @@ void Imu::addMeasurementErrorTerms(CalibratorI & calib, const EstConf & /*ec*/, 
               g_m,
               accBias.getBiasExpression(timestamp),
               m.a,
-              isCovarianceAvailable(m) ? m.cov : covarianceMatrix,
+              isCovarianceAvailable(m) && !enforceAccCovariance_ ? m.cov : covarianceMatrix,
               etgr);
         },
         errorTermReceiver,
@@ -317,7 +329,7 @@ void Imu::addMeasurementErrorTerms(CalibratorI & calib, const EstConf & /*ec*/, 
               getTransformationExpressionTo(modelAt, inertiaFrame).toRotationExpression().inverse() * modelAt.getAngularVelocity(getParentFrame(), inertiaFrame),
               gyroBias.getBiasExpression(timestamp),
               m.w,
-              isCovarianceAvailable(m) ? m.cov : covarianceMatrix,
+              isCovarianceAvailable(m) && !enforceGyroCovariance_ ? m.cov : covarianceMatrix,
               etgr
             );
         },

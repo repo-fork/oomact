@@ -120,6 +120,11 @@ class Imu : public Sensor, public StateCarrier, public InputReceiverIT<Accelerom
   /// Statistical random walk value for the accelerometer
   double gyroRandomWalk;
 
+  /// Ignore covariance provided with AccelerometerMeasurement
+  bool enforceAccCovariance_;
+  /// Ignore covariance provided with GyroscopeMeasurement
+  bool enforceGyroCovariance_;
+
   Bias accBias, gyroBias;
 
   int minimalMeasurementsPerBatch;
