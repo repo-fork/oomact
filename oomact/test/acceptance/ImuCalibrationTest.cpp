@@ -27,6 +27,8 @@ TEST(CalibrationTestSuite, testImuCalibrationRotateStraight) {
   m.addModulesAndInit(psA, imu, traj);
 
   imu.getTranslationVariable().set({0., 1., 0.});
+  const double rotUpdate[] = {0., 0.1, 0.};
+  imu.getRotationVariable().update(rotUpdate, 3);
 
   auto spModel = aslam::to_local_shared_ptr(m);
   auto c = createBatchCalibrator(vs.getChild("calibrator"), spModel);
@@ -40,8 +42,10 @@ TEST(CalibrationTestSuite, testImuCalibrationRotateStraight) {
   }
 
   EXPECT_NEAR(1, imu.getTranslationToParent()[1], 0.0001);
+  EXPECT_NEAR(0.05, imu.getRotationQuaternionToParent()[1], 0.01);
   c->calibrate();
   EXPECT_NEAR(0, imu.getTranslationToParent()[1], 0.0001);
+  EXPECT_NEAR(0, imu.getRotationQuaternionToParent()[1], 0.01);
 }
 
 TEST(CalibrationTestSuite, testImuCalibrationCircle) {
@@ -54,6 +58,8 @@ TEST(CalibrationTestSuite, testImuCalibrationCircle) {
   m.addModulesAndInit(psA, imu, traj);
 
   imu.getTranslationVariable().set({0, 1., 0.0});
+  const double rotUpdate[] = {0., 0.1, 0.};
+  imu.getRotationVariable().update(rotUpdate, 3);
 
   auto spModel = aslam::to_local_shared_ptr(m);
   auto c = createBatchCalibrator(vs.getChild("calibrator"), spModel);
@@ -67,7 +73,9 @@ TEST(CalibrationTestSuite, testImuCalibrationCircle) {
   }
 
   EXPECT_NEAR(1, imu.getTranslationToParent()[1], 0.0001);
+  EXPECT_NEAR(0.05, imu.getRotationQuaternionToParent()[1], 0.01);
   c->calibrate();
   EXPECT_NEAR(0, imu.getTranslationToParent()[1], 0.0001);
+  EXPECT_NEAR(0, imu.getRotationQuaternionToParent()[1], 0.01);
 }
 
