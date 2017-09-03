@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
 
   std::vector<cal::PoseSensor> pose_sensors;
   pose_sensors.reserve(num_pose_sensors);
-  for (size_t i = 0; i < num_pose_sensors; ++i) {
+  for (size_t i = 0; i < static_cast<size_t>(num_pose_sensors); ++i) {
     pose_sensors.emplace_back(*model, std::string("pose") + std::to_string(i),
                               vs_model);
     model->add(pose_sensors.back());
