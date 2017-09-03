@@ -16,6 +16,7 @@
 #include <aslam/calibration/algo/splinesToFile.h>
 #include <aslam/calibration/model/Model.h>
 #include <aslam/calibration/model/fragments/TrajectoryCarrier.h>
+#include <aslam/calibration/model/ModuleTools.h>
 #include <aslam/calibration/model/StateCarrier.h>
 #include "aslam/calibration/error-terms/ErrorTermAccelerometer.h"
 #include "aslam/calibration/error-terms/ErrorTermGyroscope.h"
@@ -55,6 +56,25 @@ Imu::Imu(Model& model, const std::string& name, sm::value_store::ValueStoreRef c
   }
 
 //TODO C support MESTIMATORS:  setMEstimator(boost::shared_ptr<aslam::backend::MEstimator>(new aslam::backend::CauchyMEstimator(10)));
+}
+
+void Imu::writeConfig(std::ostream& out) const {
+  MODULE_WRITE_PARAMETER(inertiaFrame);
+
+  MODULE_WRITE_FLAG(useAcc_);
+  if(useAcc_){
+    MODULE_WRITE_PARAMETER(accXVariance);
+    MODULE_WRITE_PARAMETER(accYVariance);
+    MODULE_WRITE_PARAMETER(accZVariance);
+  }
+  MODULE_WRITE_FLAG(useGyro_);
+  if(useGyro_){
+    MODULE_WRITE_PARAMETER(gyroXVariance);
+    MODULE_WRITE_PARAMETER(gyroYVariance);
+    MODULE_WRITE_PARAMETER(gyroZVariance);
+  }
+
+  MODULE_WRITE_PARAMETER(minimalMeasurementsPerBatch);
 }
 
 void Imu::registerWithModel() {

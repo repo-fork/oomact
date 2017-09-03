@@ -95,6 +95,7 @@ class Imu : public Sensor, public StateCarrier, public InputReceiverIT<Accelerom
  protected:
   void registerWithModel() override;
   void setActive(bool spatial, bool temporal) override;
+  void writeConfig(std::ostream & out) const override;
 
  private:
   void addMeasurementErrorTerms(CalibratorI & calib, const EstConf & ec, backend::ErrorTermReceiver & errorTermReceiver, bool observeOnly) const override;
