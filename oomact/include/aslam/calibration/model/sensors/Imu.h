@@ -95,6 +95,7 @@ class Imu : public Sensor, public StateCarrier, public InputReceiverIT<Accelerom
  protected:
   void registerWithModel() override;
   void setActive(bool spatial, bool temporal) override;
+  void writeConfig(std::ostream & out) const override;
 
  private:
   void addMeasurementErrorTerms(CalibratorI & calib, const EstConf & ec, backend::ErrorTermReceiver & errorTermReceiver, bool observeOnly) const override;
@@ -118,6 +119,11 @@ class Imu : public Sensor, public StateCarrier, public InputReceiverIT<Accelerom
   double gyroZVariance;
   /// Statistical random walk value for the accelerometer
   double gyroRandomWalk;
+
+  /// Ignore covariance provided with AccelerometerMeasurement
+  bool enforceAccCovariance_;
+  /// Ignore covariance provided with GyroscopeMeasurement
+  bool enforceGyroCovariance_;
 
   Bias accBias, gyroBias;
 

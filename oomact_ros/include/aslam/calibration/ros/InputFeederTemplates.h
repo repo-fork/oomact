@@ -4,6 +4,8 @@
 #include <stdexcept>
 #include "InputFeederFactoryI.h"
 
+#include "aslam/calibration/tools/TypeName.h"
+
 namespace aslam {
 namespace calibration {
 namespace ros {
@@ -34,7 +36,7 @@ class InputFeederImpl : public InputFeederI {
    * @return timestamp used for measurement (In receivers time frame). If InvalidTimestamp() is returned the message is assumed skipped.
    */
   Timestamp feedMeasurementAndReturnTimestamp(const Msg & m, const Receiver & receiver, ObservationManagerI & obsManager) const {
-    throw std::runtime_error(std::string("Class ") + typeid(Derived).name() + " must implement (shadow) feedMeasurementAndReturnTimestamp.");
+    throw std::runtime_error(std::string("Class ") + TypeName(typeid(Derived)) + " must implement (shadow) feedMeasurementAndReturnTimestamp.");
     return InvalidTimestamp();
   }
 
@@ -66,6 +68,10 @@ class InputFeederForMeassagesWithHeader : public InputFeederImpl<Msg, InputRecei
     const auto t = getTimestampFromHeader(m);
     receiver.addInputTo(t, measurement, obsManager.getCurrentStorage());
     return t;
+  }
+
+  virtual void print(std::ostream & o) const {
+    o << "RosInputFeeder(" << typeid(Msg) << " -> "<< this->getReceiver().getModule().getName() << "." << typeid(Measurement) << ")";
   }
 };
 
